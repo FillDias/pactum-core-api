@@ -3,10 +3,11 @@ class Api::V1::CalculationsController < Api::V1::BaseController
 
   def nav
     payload = PortfolioService.build_nav_payload(@portfolio)
+    prices_source = payload.delete(:prices_source)
     result = EngineService.calculate_nav(**payload)
 
     if result[:success]
-      render_success(result[:data])
+      render_success(result[:data].merge("pricesSource" => prices_source))
     else
       render_error(result[:error] || "Calculation failed", :service_unavailable)
     end
