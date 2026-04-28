@@ -44,6 +44,22 @@ class Api::V1::CalculationsController < Api::V1::BaseController
     end
   end
 
+  def irr
+    cashflows = PortfolioService.build_irr_cashflows(@portfolio)
+
+    if cashflows.size < 2
+      return render_error("At least two cashflows required for IRR", :unprocessable_entity)
+    end
+
+    result = EngineService.calculate_irr(cashflows: cashflows)
+
+    if result[:success]
+      render_success(result[:data])
+    else
+      render_error(result[:error] || "Calculation failed", :service_unavailable)
+    end
+  end
+
   private
 
   def set_portfolio

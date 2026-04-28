@@ -48,16 +48,18 @@ class Api::V1::PortfoliosController < Api::V1::BaseController
   end
 
   def portfolio_params
-    params.permit(:name, :currency)
+    p = params[:portfolio] ? params.require(:portfolio) : params
+    p.permit(:name, :description, :currency)
   end
 
   def portfolio_json(portfolio)
     {
-      id: portfolio.id,
-      name: portfolio.name,
-      currency: portfolio.currency,
+      id:                portfolio.id,
+      name:              portfolio.name,
+      description:       portfolio.description,
+      currency:          portfolio.currency,
       transaction_count: portfolio.transactions.size,
-      created_at: portfolio.created_at
+      created_at:        portfolio.created_at
     }
   end
 end

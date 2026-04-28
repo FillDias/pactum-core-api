@@ -39,6 +39,15 @@ class EngineService
     { success: false, error: "Engine unavailable: #{e.message}" }
   end
 
+  def self.calculate_irr(cashflows:)
+    response = connection.post("/calculate/irr") do |req|
+      req.body = { cashflows: cashflows }
+    end
+    { success: response.success?, data: response.body }
+  rescue Faraday::ConnectionFailed, Faraday::TimeoutError => e
+    { success: false, error: "Engine unavailable: #{e.message}" }
+  end
+
   def self.health
     connection.get("/health")
     true

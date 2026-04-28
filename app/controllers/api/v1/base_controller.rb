@@ -19,8 +19,10 @@ class Api::V1::BaseController < ApplicationController
     @current_user
   end
 
-  def render_success(data, status: :ok)
-    render json: { data: data }, status: status
+  def render_success(data, status: :ok, meta: nil)
+    payload = { data: data }
+    payload[:meta] = meta if meta
+    render json: payload, status: status
   end
 
   def render_error(message, status = :unprocessable_entity)
