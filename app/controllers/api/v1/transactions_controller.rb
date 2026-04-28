@@ -2,15 +2,37 @@ class Api::V1::TransactionsController < Api::V1::BaseController
   before_action :set_portfolio
 
   def index
-    transactions = @portfolio.transactions.includes(:security).order(date: :desc)
-    render_success(transactions.map { |t| transaction_json(t) })
+    page     = [params[:page].to_i, 1].max
+    per_page = [[params[:per_page].to_i, 1].max, 100].min
+    per_page = 25 if per_page == 0
+
+    scope = @portfolio.transactions.includes(:security).order(date: :desc)
+    total = scope.count
+
+    transactions = scope.offset((page - 1) * per_page).limit(per_page)
+
+    render_success(
+      transactions.map { |t| transaction_json(t) },
+      meta: { page: page, per_page: per_page, total: total, total_pages: (total.to_f / per_page).ceil }
+    )
   end
 
   def create
-    transaction = @portfolio.transactions.build(transaction_params)
+    p = transaction_params
+
+    # aceita ticker ou UUID como security_id
+    ticker_or_id = p[:security_id].to_s
+    security = Security.find_by(id: ticker_or_id) ||
+               Security.find_by("LOWER(ticker) = ?", ticker_or_id.downcase)
+
+    return render_error("Security '#{ticker_or_id}' not found", :unprocessable_entity) unless security
+
+    transaction = @portfolio.transactions.build(p.merge(security_id: security.id))
 
     if transaction.save
-      nav = EngineService.calculate_nav(**PortfolioService.build_nav_payload(@portfolio))
+      payload = PortfolioService.build_nav_payload(@portfolio)
+      payload.delete(:prices_source)
+      nav = EngineService.calculate_nav(**payload)
       render_success(
         { transaction: transaction_json(transaction), nav: nav[:success] ? nav[:data] : nil },
         status: :created
@@ -37,7 +59,8 @@ class Api::V1::TransactionsController < Api::V1::BaseController
   end
 
   def transaction_params
-    params.permit(:security_id, :transaction_type, :quantity, :price, :date, :broker)
+    p = params[:transaction] ? params.require(:transaction) : params
+    p.permit(:security_id, :transaction_type, :quantity, :price, :date, :broker)
   end
 
   def transaction_json(t)

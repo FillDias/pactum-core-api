@@ -27,16 +27,19 @@ class Api::V1::SecuritiesController < Api::V1::BaseController
   private
 
   def security_params
-    params.permit(:ticker, :name, :security_type, :currency)
+    params.permit(:ticker, :name, :security_type, :currency, :annual_rate, :index_type, :maturity_date)
   end
 
   def security_json(security)
     {
-      id: security.id,
-      ticker: security.ticker,
-      name: security.name,
+      id:            security.id,
+      ticker:        security.ticker,
+      name:          security.name,
       security_type: security.security_type,
-      currency: security.currency
+      currency:      security.currency,
+      annual_rate:   security.annual_rate&.to_f,
+      index_type:    security.index_type,
+      maturity_date: security.maturity_date&.to_s
     }
   end
 end

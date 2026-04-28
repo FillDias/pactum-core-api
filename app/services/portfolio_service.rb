@@ -20,6 +20,30 @@ class PortfolioService
     { transactions: tx_list, current_prices: current_prices, prices_source: prices_source }
   end
 
+  def self.build_irr_cashflows(portfolio)
+    transactions = portfolio.transactions.includes(:security).order(:date)
+    return [] if transactions.empty?
+
+    # Each BUY is an outflow (negative), each SELL is an inflow (positive)
+    historical = transactions.map do |t|
+      sign = t.transaction_type == "BUY" ? -1.0 : 1.0
+      { date: t.date.to_s, amount: sign * t.quantity.to_f * t.price.to_f }
+    end
+
+    # Add current portfolio value as a final inflow (as-of today)
+    securities = transactions.map(&:security).uniq(&:ticker)
+    current_prices, = resolve_prices(securities, transactions)
+
+    current_value = transactions
+      .group_by(&:security)
+      .sum do |security, txs|
+        qty = txs.sum { |t| t.transaction_type == "BUY" ? t.quantity.to_f : -t.quantity.to_f }
+        qty > 0 ? qty * (current_prices[security.ticker] || 0.0) : 0.0
+      end
+
+    historical + [{ date: Date.today.to_s, amount: current_value }]
+  end
+
   def self.build_twr_periods(portfolio)
     transactions = portfolio.transactions.includes(:security).order(:date)
     return [] if transactions.empty?

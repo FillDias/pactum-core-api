@@ -1,10 +1,33 @@
 class BrapiService
-  FIXED_INCOME_TYPES = %w[cdb lci lca tesouro savings other].freeze
-  VARIABLE_INCOME_TYPES = %w[stock etf fii bdr].freeze
+  FIXED_INCOME_TYPES = %w[cdb lci lca tesouro savings fund other].freeze
+  VARIABLE_INCOME_TYPES = %w[stock etf fii bdr crypto].freeze
+
+  CACHE_TTL = 5.minutes
 
   def self.fetch_quotes(tickers)
     return {} if tickers.empty?
 
+    cached  = {}
+    missing = []
+
+    tickers.each do |ticker|
+      cached_price = Rails.cache.read("brapi_price_#{ticker}")
+      if cached_price
+        cached[ticker] = cached_price
+      else
+        missing << ticker
+      end
+    end
+
+    return cached if missing.empty?
+
+    fresh = fetch_from_brapi(missing)
+    fresh.each { |ticker, price| Rails.cache.write("brapi_price_#{ticker}", price, expires_in: CACHE_TTL) }
+
+    cached.merge(fresh)
+  end
+
+  private_class_method def self.fetch_from_brapi(tickers)
     response = connection.get("quote/#{tickers.join(',')}") do |req|
       req.params["token"] = ENV.fetch("BRAPI_TOKEN")
       req.params["fundamental"] = "false"
