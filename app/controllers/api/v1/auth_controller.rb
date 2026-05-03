@@ -38,7 +38,7 @@ class Api::V1::AuthController < ApplicationController
     if user.nil?
       temp_password = SecureRandom.hex(16)
       user = User.create!(
-        name:     email.split("@").first,
+        name:     params[:name].presence || email.split("@").first,
         email:    email,
         password: temp_password
       )
