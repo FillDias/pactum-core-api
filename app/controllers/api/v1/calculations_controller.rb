@@ -3,10 +3,11 @@ class Api::V1::CalculationsController < Api::V1::BaseController
 
   def nav
     payload = PortfolioService.build_nav_payload(@portfolio)
+    prices_source = payload.delete(:prices_source)
     result = EngineService.calculate_nav(**payload)
 
     if result[:success]
-      render_success(result[:data])
+      render_success(result[:data].merge("pricesSource" => prices_source))
     else
       render_error(result[:error] || "Calculation failed", :service_unavailable)
     end
@@ -35,6 +36,22 @@ class Api::V1::CalculationsController < Api::V1::BaseController
     end
 
     result = EngineService.calculate_twr(periods: periods)
+
+    if result[:success]
+      render_success(result[:data])
+    else
+      render_error(result[:error] || "Calculation failed", :service_unavailable)
+    end
+  end
+
+  def irr
+    cashflows = PortfolioService.build_irr_cashflows(@portfolio)
+
+    if cashflows.size < 2
+      return render_error("At least two cashflows required for IRR", :unprocessable_entity)
+    end
+
+    result = EngineService.calculate_irr(cashflows: cashflows)
 
     if result[:success]
       render_success(result[:data])

@@ -25,6 +25,31 @@ class Api::V1::AuthController < ApplicationController
     render json: { data: { message: "Logged out successfully" } }
   end
 
+  # Aceita token do pactum-api e retorna token do core-api
+  # Cria o usuario no core-api automaticamente se nao existir
+  def sync
+    pactum_token = params[:pactum_token].to_s
+    email        = params[:email].to_s.downcase
+
+    return render json: { error: "Missing params" }, status: :bad_request if pactum_token.blank? || email.blank?
+
+    user = User.find_by(email: email)
+
+    if user.nil?
+      temp_password = SecureRandom.hex(16)
+      user = User.create!(
+        name:     params[:name].presence || email.split("@").first,
+        email:    email,
+        password: temp_password
+      )
+    end
+
+    token = JwtService.encode(user_id: user.id)
+    render json: { data: { token: token } }
+  rescue => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
   private
 
   def user_params

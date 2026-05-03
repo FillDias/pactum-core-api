@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_04_27_165938) do
+ActiveRecord::Schema[7.2].define(version: 2026_05_03_145810) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -21,6 +21,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_27_165938) do
     t.string "currency", default: "BRL", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "description"
     t.index ["user_id"], name: "index_portfolios_on_user_id"
   end
 
@@ -31,6 +32,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_27_165938) do
     t.string "currency", default: "BRL", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "annual_rate"
+    t.string "index_type"
+    t.date "maturity_date"
     t.index ["ticker"], name: "index_securities_on_ticker", unique: true
   end
 
@@ -54,6 +58,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_27_165938) do
     t.string "password_digest", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "reset_password_token"
+    t.datetime "reset_password_sent_at"
+    t.datetime "email_verified_at"
+    t.string "email_verification_token"
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 

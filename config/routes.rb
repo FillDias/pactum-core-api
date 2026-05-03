@@ -7,6 +7,7 @@ Rails.application.routes.draw do
 
       post "auth/register", to: "auth#register"
       post "auth/login",    to: "auth#login"
+      post "auth/sync",     to: "auth#sync"
       delete "auth/logout", to: "auth#logout"
 
       resources :portfolios do
@@ -15,11 +16,13 @@ Rails.application.routes.draw do
         post "calculations/nav", to: "calculations#nav"
         post "calculations/cdi", to: "calculations#cdi"
         post "calculations/twr", to: "calculations#twr"
+        post "calculations/irr", to: "calculations#irr"
       end
 
-      resources :securities, only: [:index, :create] do
+      resources :securities, only: [:index, :create, :update] do
         collection do
           get :search
+          get :brapi_lookup
         end
       end
     end
