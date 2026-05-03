@@ -14,6 +14,27 @@ class Api::V1::SecuritiesController < Api::V1::BaseController
     render_success(results.map { |s| security_json(s) })
   end
 
+  def brapi_lookup
+    ticker = params[:ticker].to_s.strip.upcase
+    return render_error("Ticker obrigatorio") if ticker.blank?
+
+    security = Security.find_by("LOWER(ticker) = ?", ticker.downcase)
+    return render_success(security_json(security)) if security
+
+    data = BrapiService.lookup_ticker(ticker)
+    return render_error("Ticker '#{ticker}' nao encontrado", :not_found) unless data
+
+    security = Security.find_or_create_by!(ticker: data[:ticker]) do |s|
+      s.name          = data[:name]
+      s.security_type = data[:type]
+      s.currency      = "BRL"
+    end
+
+    render_success(security_json(security))
+  rescue ActiveRecord::RecordInvalid => e
+    render_error(e.message)
+  end
+
   def create
     security = Security.new(security_params)
 
@@ -24,10 +45,25 @@ class Api::V1::SecuritiesController < Api::V1::BaseController
     end
   end
 
+  def update
+    security = Security.find(params[:id])
+    if security.update(update_params)
+      render_success(security_json(security))
+    else
+      render_error(security.errors.full_messages.join(", "))
+    end
+  rescue ActiveRecord::RecordNotFound
+    render_error("Security not found", :not_found)
+  end
+
   private
 
   def security_params
     params.permit(:ticker, :name, :security_type, :currency, :annual_rate, :index_type, :maturity_date)
+  end
+
+  def update_params
+    params.permit(:name, :annual_rate, :index_type, :maturity_date)
   end
 
   def security_json(security)

@@ -19,9 +19,10 @@ Rails.application.routes.draw do
         post "calculations/irr", to: "calculations#irr"
       end
 
-      resources :securities, only: [:index, :create] do
+      resources :securities, only: [:index, :create, :update] do
         collection do
           get :search
+          get :brapi_lookup
         end
       end
     end
