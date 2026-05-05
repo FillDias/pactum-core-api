@@ -28,15 +28,18 @@ class BrapiService
   end
 
   private_class_method def self.fetch_from_brapi(tickers)
-    response = connection.get("quote/#{tickers.join(',')}") do |req|
-      req.params["token"] = ENV.fetch("BRAPI_TOKEN")
-      req.params["fundamental"] = "false"
-    end
+    tickers.each_with_object({}) do |ticker, results|
+      response = connection.get("quote/#{ticker}") do |req|
+        req.params["token"] = ENV.fetch("BRAPI_TOKEN")
+        req.params["fundamental"] = "false"
+      end
 
-    return {} unless response.success?
+      next unless response.success?
 
-    Array(response.body["results"]).each_with_object({}) do |result, hash|
-      hash[result["symbol"]] = result["regularMarketPrice"].to_f
+      result = Array(response.body["results"]).first
+      next unless result && result["regularMarketPrice"]
+
+      results[result["symbol"]] = result["regularMarketPrice"].to_f
     end
   rescue Faraday::ConnectionFailed, Faraday::TimeoutError
     {}
