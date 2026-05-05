@@ -11,7 +11,7 @@ gem "rack-cors"
 gem "rack-attack"
 gem "faraday", "~> 2.7"
 gem "sidekiq", "~> 7.0"
-gem "connection_pool", "~> 2.5"
+gem "connection_pool", "~> 3.0"
 
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 gem "bootsnap", require: false
