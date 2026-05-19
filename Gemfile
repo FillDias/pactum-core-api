@@ -9,7 +9,7 @@ gem "bcrypt", "~> 3.1.7"
 gem "jwt", "~> 2.7"
 gem "rack-cors"
 gem "rack-attack"
-gem "faraday", "~> 2.7"
+gem "faraday", "~> 2.14"
 gem "sidekiq", "~> 7.0"
 gem "connection_pool", "~> 2.5"
 
